@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Income Approach Valuation | Chase Builds</title>
+<meta name="description" content="Value rental and small commercial property by the income approach: rent roll, NOI, direct cap, band of investment, GRM, DCF, sensitivity and reconciliation. Analysis tool, not an appraisal.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a2019'/%3E%3Cpath d='M7 23V13l9-6 9 6v10z' fill='%23e2583a'/%3E%3C/svg%3E">
+<script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+<div class="room" aria-hidden="true"></div>
+<div class="app">
+  <header class="bar glass">
+    <div class="who"><b>CB</b><span>Chase Builds</span></div>
+    <nav class="pills" aria-label="Sections">
+      <a href="#sec-rent">Rent roll</a>
+      <a href="#sec-noi">NOI</a>
+      <a href="#sec-cap">Cap rate</a>
+      <a href="#sec-grm">GRM</a>
+      <a href="#sec-dcf">DCF</a>
+      <a href="#sec-sens">Sensitivity</a>
+      <a href="#sec-rec">Reconcile</a>
+    </nav>
+  </header>
+
+  <main class="stage glass">
+    <div class="head">
+      <div>
+        <h1>Income approach valuation</h1>
+        <p class="sub">Value a rental or small commercial property from its rent roll, operating costs and market evidence. Runs in your browser. Nothing is uploaded.</p>
+      </div>
+      <label class="pick">Example
+        <select id="scenario" aria-label="Example property"></select>
+      </label>
+    </div>
+
+    <div class="notice" role="note">
+      <strong>Analysis and education tool, not an appraisal.</strong>
+      A USPAP-compliant appraisal requires a licensed or certified appraiser. All example data is synthetic.
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <section id="sec-rent" class="card sec">
+      <div class="row-head">
+        <div><h2>1. Rent roll and market rent check</h2>
+          <p class="note" id="scenario-blurb"></p></div>
+        <div class="actions">
+          <label class="btn file">Upload CSV<input type="file" id="csv-file" accept=".csv,text/csv" hidden></label>
+          <button type="button" class="btn" id="csv-template">Download CSV template</button>
+        </div>
+      </div>
+      <p class="msg" id="csv-msg" role="status"></p>
+      <div class="tablewrap"><div id="rent-grid"></div></div>
+      <div class="inline">
+        <label>Potential gross income based on
+          <select data-bind="basis">
+            <option value="market">Market rent, every unit</option>
+            <option value="contract">In-place rent (market rent for vacant units)</option>
+          </select>
+        </label>
+      </div>
+      <div class="kv" id="rent-summary"></div>
+    </section>
+
+    <section id="sec-noi" class="card sec">
+      <h2>2. Operating statement and expense checks</h2>
+      <div class="fields">
+        <label>Vacancy <span class="unit">% of PGI</span><input data-bind="vacancyPct" data-kind="pct" type="number" step="any" min="0"></label>
+        <label>Credit loss <span class="unit">% of PGI</span><input data-bind="creditLossPct" data-kind="pct" type="number" step="any" min="0"></label>
+        <label>Other income <span class="unit">$ per year</span><input data-bind="otherIncome" data-kind="num" type="number" step="any" min="0"></label>
+        <label class="wide">Other income note<input data-bind="otherIncomeNote" data-kind="text" type="text"></label>
+      </div>
+      <div class="tablewrap"><div id="exp-grid"></div></div>
+      <p class="note">Benchmark ranges are in dollars per square foot per year. The ones in the examples are illustrative, not market data. Replace them with ranges from your own market. Leave blank to skip the check. A percent of EGI replaces the dollar amount.</p>
+      <div class="statement" id="statement"></div>
+    </section>
+
+    <section id="sec-cap" class="card sec">
+      <h2>3. Capitalization rate</h2>
+      <div class="grid2">
+        <div>
+          <h3>Cap rate extraction from comparable sales</h3>
+          <div class="tablewrap"><div id="comp-grid"></div></div>
+          <div class="kv" id="comp-stats"></div>
+        </div>
+        <div>
+          <h3>Band of investment</h3>
+          <div class="fields">
+            <label>Loan to value <span class="unit">%</span><input data-bind="band.ltv" data-kind="pct" type="number" step="any" min="0" max="100"></label>
+            <label>Interest rate <span class="unit">%</span><input data-bind="band.rate" data-kind="pct" type="number" step="any" min="0"></label>
+            <label>Amortization <span class="unit">years</span><input data-bind="band.years" data-kind="num" type="number" step="1" min="1"></label>
+            <label>Equity dividend rate <span class="unit">%</span><input data-bind="band.equityDividend" data-kind="pct" type="number" step="any" min="0"></label>
+          </div>
+          <div class="kv" id="band-out"></div>
+        </div>
+      </div>
+      <div class="inline pickrow">
+        <label>Selected cap rate <span class="unit">%</span><input data-bind="selectedCap" data-kind="pct" type="number" step="any" min="0.01"></label>
+        <button type="button" class="btn" id="use-median-cap">Use comp median</button>
+        <button type="button" class="btn" id="use-band-cap">Use band of investment</button>
+      </div>
+      <div class="kv" id="direct-out"></div>
+    </section>
+
+    <section id="sec-grm" class="card sec">
+      <h2>4. Gross rent multiplier</h2>
+      <p class="note">GRM = sale price divided by annual gross rent. The comparable sales in step 3 supply the multipliers. It is a rough cross-check because it ignores expenses.</p>
+      <div class="inline pickrow">
+        <label>Selected GRM<input data-bind="selectedGrm" data-kind="num" type="number" step="any" min="0.1"></label>
+        <button type="button" class="btn" id="use-median-grm">Use comp median</button>
+      </div>
+      <div class="kv" id="grm-out"></div>
+    </section>
+
+    <section id="sec-dcf" class="card sec">
+      <h2>5. Discounted cash flow</h2>
+      <div class="fields">
+        <label>Holding period <span class="unit">years</span>
+          <select data-bind="dcf.years" data-kind="num">
+            <option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+          </select></label>
+        <label>Rent growth <span class="unit">% per year</span><input data-bind="dcf.rentGrowth" data-kind="pct" type="number" step="any"></label>
+        <label>Expense growth <span class="unit">% per year</span><input data-bind="dcf.expenseGrowth" data-kind="pct" type="number" step="any"></label>
+        <label>Capital reserve <span class="unit">$ per sf per year</span><input data-bind="dcf.reservePerSf" data-kind="num" type="number" step="any" min="0"></label>
+        <label>Terminal cap rate <span class="unit">%</span><input data-bind="dcf.terminalCap" data-kind="pct" type="number" step="any" min="0.01"></label>
+        <label>Selling costs <span class="unit">% of sale</span><input data-bind="dcf.sellingCostPct" data-kind="pct" type="number" step="any" min="0"></label>
+        <label>Discount rate <span class="unit">%</span><input data-bind="dcf.discountRate" data-kind="pct" type="number" step="any" min="0"></label>
+        <label>Price for IRR <span class="unit">$, blank = direct cap value</span><input data-bind="dcfPrice" data-kind="optnum" type="number" step="any" min="0" placeholder="direct cap value"></label>
+      </div>
+      <p class="note">The capital reserve is taken below NOI in the cash flow, so do not also list reserves as an operating expense. The sale price is next-year NOI divided by the terminal cap rate.</p>
+      <div class="tablewrap" id="dcf-table"></div>
+      <div class="kv" id="dcf-out"></div>
+    </section>
+
+    <section id="sec-sens" class="card sec">
+      <h2>6. Sensitivity: value by cap rate and vacancy</h2>
+      <p class="note">Direct capitalization value. Operating expenses stay as entered except percent-of-EGI lines, which move with income.</p>
+      <div class="tablewrap" id="sens-table"></div>
+    </section>
+
+    <section id="sec-rec" class="card sec">
+      <h2>7. Reconciliation</h2>
+      <div class="tablewrap" id="rec-table"></div>
+      <div class="kv" id="rec-out"></div>
+      <div id="checks"></div>
+    </section>
+
+    <section class="card sec limits">
+      <h2>Limitations</h2>
+      <ul>
+        <li>This is not an appraisal and gives no opinion of value for any lending, tax, legal or sale purpose. A USPAP-compliant appraisal requires a licensed or certified appraiser.</li>
+        <li>Results are only as good as the inputs. Cap rates, rents, expenses and growth rates must come from verified market evidence.</li>
+        <li>The examples use made-up numbers. The benchmark ranges are illustrative.</li>
+        <li>Models are simplified: annual periods, year-end cash flows, a single rent growth rate, no leasing costs, tenant improvements, loan fees or income tax.</li>
+        <li>Reconciliation weights are your judgment. The tool only does the arithmetic.</li>
+      </ul>
+    </section>
+  </main>
+  <footer class="foot">Built by Chase Builds. MIT licensed. Your data stays in this browser tab.</footer>
+</div>
+</body>
+</html>
