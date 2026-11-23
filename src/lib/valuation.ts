@@ -332,3 +332,20 @@ export function reconcile(ind: Indication[]): Reconciled {
 }
 
 export const roundTo = (v: number, step: number): number => Math.round(v / step) * step;
+
+/* ---------- Stabilized to as-is ---------- */
+
+/** Rent lost while vacant units lease up: market rent of vacant units x months. */
+export function leaseUpLoss(units: Unit[], months: number): number {
+  return units.filter((u) => !u.occupied).reduce((s, u) => s + u.marketRent * Math.max(0, months), 0);
+}
+
+export interface Adjustment {
+  name: string;
+  amount: number;
+}
+
+/** As-is value: stabilized value less lease-up loss and other deductions (deferred maintenance, leasing costs). */
+export function asIsValue(stabilized: number, leaseUp: number, adjustments: Adjustment[]): number {
+  return stabilized - leaseUp - adjustments.reduce((s, a) => s + a.amount, 0);
+}

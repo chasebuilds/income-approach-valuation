@@ -21,6 +21,7 @@
       <a href="#sec-dcf">DCF</a>
       <a href="#sec-sens">Sensitivity</a>
       <a href="#sec-rec">Reconcile</a>
+      <a href="#sec-asis">As-is</a>
     </nav>
   </header>
 
@@ -33,6 +34,13 @@
       <label class="pick">Example
         <select id="scenario" aria-label="Example property"></select>
       </label>
+    </div>
+
+    <div class="actions noprint">
+      <button type="button" class="btn" id="save-json">Save scenario (JSON)</button>
+      <label class="btn file">Load scenario<input type="file" id="load-json" accept=".json,application/json" hidden></label>
+      <button type="button" class="btn" id="export-csv">Download summary (CSV)</button>
+      <button type="button" class="btn" id="print">Print report</button>
     </div>
 
     <div class="notice" role="note">
@@ -92,6 +100,7 @@
             <label>Interest rate <span class="unit">%</span><input data-bind="band.rate" data-kind="pct" type="number" step="any" min="0"></label>
             <label>Amortization <span class="unit">years</span><input data-bind="band.years" data-kind="num" type="number" step="1" min="1"></label>
             <label>Equity dividend rate <span class="unit">%</span><input data-bind="band.equityDividend" data-kind="pct" type="number" step="any" min="0"></label>
+            <label>Lender coverage (DCR) <span class="unit">NOI / debt service</span><input data-bind="dcr" data-kind="num" type="number" step="any" min="0.5"></label>
           </div>
           <div class="kv" id="band-out"></div>
         </div>
@@ -100,6 +109,7 @@
         <label>Selected cap rate <span class="unit">%</span><input data-bind="selectedCap" data-kind="pct" type="number" step="any" min="0.01"></label>
         <button type="button" class="btn" id="use-median-cap">Use comp median</button>
         <button type="button" class="btn" id="use-band-cap">Use band of investment</button>
+        <button type="button" class="btn" id="use-dcr-cap">Use debt coverage method</button>
       </div>
       <div class="kv" id="direct-out"></div>
     </section>
@@ -145,6 +155,16 @@
       <div class="tablewrap" id="rec-table"></div>
       <div class="kv" id="rec-out"></div>
       <div id="checks"></div>
+    </section>
+
+    <section id="sec-asis" class="card sec">
+      <h2>8. Stabilized value to as-is value</h2>
+      <p class="note">The indications above assume the property is stabilized. If units are vacant or repairs are needed, an as-is value deducts the rent lost while leasing up plus costs to cure.</p>
+      <div class="fields">
+        <label>Months to lease vacant units<input data-bind="leaseUpMonths" data-kind="num" type="number" step="1" min="0"></label>
+      </div>
+      <div class="tablewrap"><div id="adj-grid"></div></div>
+      <div class="kv" id="asis-out"></div>
     </section>
 
     <section class="card sec limits">

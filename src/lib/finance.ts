@@ -66,3 +66,13 @@ export function irr(cashflows: number[]): number {
   }
   return (lo + hi) / 2;
 }
+
+/**
+ * Debt coverage ratio method for the overall cap rate: R = DCR x M x Rm.
+ * The lender's coverage requirement sets the most NOI the loan can carry.
+ */
+export function dcrCapRate(dcr: number, ltv: number, rate: number, years: number): number {
+  if (dcr <= 0) throw new Error('dcr must be positive');
+  if (ltv < 0 || ltv > 1) throw new Error('ltv must be between 0 and 1');
+  return dcr * ltv * mortgageConstant(rate, years);
+}

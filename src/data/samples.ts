@@ -31,6 +31,12 @@ export interface Scenario {
     discountRate: number;
   };
   weights: { direct: number; grm: number; dcf: number };
+  /** Months to lease currently vacant units, for the as-is adjustment. */
+  leaseUpMonths: number;
+  /** Other as-is deductions: deferred maintenance, leasing costs, and similar. */
+  adjustments: { name: string; amount: number }[];
+  /** Debt coverage ratio a lender requires, for the DCR cap rate method. */
+  dcr: number;
   sensitivityCapStep: number;
   sensitivityVacStep: number;
 }
@@ -81,6 +87,9 @@ export const fourplex: Scenario = {
   band: { ltv: 0.7, rate: 0.0675, years: 25, equityDividend: 0.08 },
   dcf: { years: 5, rentGrowth: 0.025, expenseGrowth: 0.03, reservePerSf: 0.3, terminalCap: 0.085, sellingCostPct: 0.03, discountRate: 0.095 },
   weights: { direct: 50, grm: 20, dcf: 30 },
+  leaseUpMonths: 3,
+  adjustments: [{ name: 'Deferred maintenance (roof patch, unit 4 paint)', amount: 3500 }],
+  dcr: 1.25,
   sensitivityCapStep: 0.005,
   sensitivityVacStep: 0.025,
 };
@@ -118,6 +127,12 @@ export const stripRetail: Scenario = {
   band: { ltv: 0.65, rate: 0.0725, years: 20, equityDividend: 0.09 },
   dcf: { years: 7, rentGrowth: 0.02, expenseGrowth: 0.025, reservePerSf: 0.25, terminalCap: 0.0925, sellingCostPct: 0.03, discountRate: 0.105 },
   weights: { direct: 55, grm: 15, dcf: 30 },
+  leaseUpMonths: 6,
+  adjustments: [
+    { name: 'Leasing commission, bay 4', amount: 4800 },
+    { name: 'Tenant improvements, bay 4', amount: 18000 },
+  ],
+  dcr: 1.3,
   sensitivityCapStep: 0.005,
   sensitivityVacStep: 0.025,
 };

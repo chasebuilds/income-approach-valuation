@@ -1,6 +1,6 @@
 {
   "name": "income-approach-valuation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Income approach valuation tool: rent roll, NOI, direct cap, band of investment, GRM, DCF, sensitivity. Analysis tool, not an appraisal.",
@@ -10,12 +10,15 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint .",
+    "benchmark": "tsx scripts/benchmark.ts",
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
     "eslint": "^10.15.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.73.0",
     "vite": "^8.3.8",

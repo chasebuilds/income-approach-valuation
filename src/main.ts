@@ -1,7 +1,10 @@
 import './style.css';
-import { bandOfInvestment } from './lib/finance';
+import { bandOfInvestment, dcrCapRate } from './lib/finance';
+import { fromJson, summaryCsv, toJson } from './lib/io';
 import {
+  asIsValue,
   checkExpenses,
+  leaseUpLoss,
   compCapRate,
   compGrm,
   directCap,
@@ -14,6 +17,7 @@ import {
   sensitivity,
   stats,
   summarizeRentRoll,
+  type Adjustment,
   type SaleComp,
   type Unit,
 } from './lib/valuation';
@@ -132,6 +136,17 @@ function mountGrids(): void {
     update,
     { newRow: () => ({ name: `Sale ${String.fromCharCode(65 + state.comps.length)}`, price: 0, noi: 0, grossRent: 0 }), addLabel: 'Add sale' },
   );
+
+  grid<Adjustment>(
+    $('adj-grid'),
+    [
+      { label: 'Deduction', key: 'name', kind: 'text' },
+      { label: '$', key: 'amount', kind: 'num' },
+    ],
+    state.adjustments,
+    update,
+    { newRow: () => ({ name: 'New deduction', amount: 0 }), addLabel: 'Add deduction' },
+  );
 }
 
 function signed(v: number): string {
@@ -192,11 +207,19 @@ function update(): void {
     ['Cap rate, median', pct(capStats.median), `mean ${pct(capStats.mean)}, range ${pct(capStats.min)} to ${pct(capStats.max)}, n = ${capStats.n}`],
   ]);
   const band = bandOfInvestment(safeBand());
+  const dcrCap = (() => {
+    try {
+      return dcrCapRate(state.dcr, Math.min(1, Math.max(0, state.band.ltv)), state.band.rate, Math.max(1, state.band.years));
+    } catch {
+      return NaN;
+    }
+  })();
   $('band-out').innerHTML = kv([
     ['Mortgage constant', pct(band.mortgageConstant, 4), 'annual debt service per $1 of loan'],
     ['Mortgage component', pct(band.mortgageComponent, 3), `${pct(state.band.ltv, 0)} x ${pct(band.mortgageConstant, 3)}`],
     ['Equity component', pct(band.equityComponent, 3), `${pct(1 - state.band.ltv, 0)} x ${pct(state.band.equityDividend, 3)}`],
     ['Overall cap rate (band)', pct(band.capRate), ''],
+    ['Cap rate by debt coverage method', pct(dcrCap), `${state.dcr}x coverage x ${pct(state.band.ltv, 0)} loan x ${pct(band.mortgageConstant, 3)} constant`],
   ]);
 
   const guard = (fn: () => number): number => {
@@ -324,6 +347,36 @@ function update(): void {
     ['Implied cap rate on NOI', pct(op.noi / rec.value)],
   ]);
 
+  // Stabilized to as-is
+  const lul = leaseUpLoss(state.units, state.leaseUpMonths);
+  const asIs = asIsValue(rounded, lul, state.adjustments);
+  $('asis-out').innerHTML = kv([
+    ['Stabilized value (rounded indication)', usd(rounded)],
+    [`Less lease-up rent loss (${int(state.units.filter((u) => !u.occupied).length)} vacant, ${state.leaseUpMonths} months)`, usd(-lul), 'market rent of vacant units x months'],
+    ...state.adjustments.map((a): [string, string] => [`Less ${a.name}`, usd(-a.amount)]),
+    ['As-is value', usd(asIs), 'illustration only, not an appraised value'],
+  ]);
+  lastRows = [
+    ['property', 'scenario', state.name],
+    ['rent roll', 'units', rr.units],
+    ['rent roll', 'square feet', rr.sf],
+    ['rent roll', 'potential gross income', pgi],
+    ['operating', 'effective gross income', op.egi],
+    ['operating', 'operating expenses', op.expenseTotal],
+    ['operating', 'net operating income', op.noi],
+    ['cap rate', 'selected', state.selectedCap],
+    ['cap rate', 'comp median', capStats.median],
+    ['cap rate', 'band of investment', band.capRate],
+    ['cap rate', 'debt coverage method', dcrCap],
+    ['value', 'direct capitalization', directValue],
+    ['value', 'gross rent multiplier', grmV],
+    ['value', 'discounted cash flow', dcfValue],
+    ['value', 'weighted indication', rec.value],
+    ['value', 'rounded indication', rounded],
+    ['value', 'as-is value', asIs],
+    ['dcf', 'unlevered IRR at price', dcf?.irr ?? NaN],
+  ];
+
   // Checks
   const msgs: string[] = [];
   if (Math.abs(capStats.median - state.selectedCap) > 0.01) msgs.push(`Selected cap rate ${pct(state.selectedCap)} is more than 1.00 point from the comp median ${pct(capStats.median)}. Support the choice.`);
@@ -345,10 +398,11 @@ function update(): void {
     .map(([l, v, c]) => `<div class="tile card ${c}"><span class="lbl">${l}</span><span class="big num">${v}</span></div>`)
     .join('');
 
-  lastMedians = { cap: capStats.median, grm: grmStats.median, band: band.capRate };
+  lastMedians = { cap: capStats.median, grm: grmStats.median, band: band.capRate, dcr: dcrCap };
 }
 
-let lastMedians = { cap: NaN, grm: NaN, band: NaN };
+let lastRows: [string, string, number | string][] = [];
+let lastMedians = { cap: NaN, grm: NaN, band: NaN, dcr: NaN };
 
 function safeBand() {
   const b = state.band;
@@ -386,6 +440,32 @@ function init(): void {
     } else msg.textContent = errors.join(' ') || 'No rows found.';
     (e.target as HTMLInputElement).value = '';
   });
+
+  const download = (name: string, text: string, type: string): void => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  $('save-json').addEventListener('click', () => download('income-approach-scenario.json', toJson(state), 'application/json'));
+  $('export-csv').addEventListener('click', () => download('income-approach-summary.csv', summaryCsv(lastRows), 'text/csv'));
+  $('print').addEventListener('click', () => window.print());
+  $('load-json').addEventListener('change', async (e) => {
+    const f = (e.target as HTMLInputElement).files?.[0];
+    if (!f) return;
+    const { scenario, error } = fromJson(await f.text());
+    const msg = $('csv-msg');
+    if (scenario) {
+      state = load(scenario);
+      mountGrids();
+      syncInputs();
+      update();
+      msg.textContent = `Loaded scenario from ${f.name}.`;
+    } else msg.textContent = error ?? 'Could not load file.';
+    (e.target as HTMLInputElement).value = '';
+  });
+  $('use-dcr-cap').addEventListener('click', () => setCap(lastMedians.dcr));
 
   $('csv-template').addEventListener('click', () => {
     const a = document.createElement('a');
