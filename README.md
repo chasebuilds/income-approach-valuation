@@ -110,3 +110,11 @@ TypeScript (strict), Vite, Vitest, ESLint. No runtime dependencies. The built bu
 ## License
 
 MIT. Copyright Chase Builds.
+
+## More from Chase Builds
+
+- **[home-value-model](https://github.com/chasebuilds/home-value-model)**: 6.0% median error, 72.4% within 10%, on 718 later Ames, Iowa sales. ([live demo](https://chasebuilds.github.io/home-value-model/))
+- **[cost-approach-calculator](https://github.com/chasebuilds/cost-approach-calculator)**: Replacement cost, depreciation and land value, with every step shown. ([live demo](https://chasebuilds.github.io/cost-approach-calculator/))
+- **[listing-data-normalizer](https://github.com/chasebuilds/listing-data-normalizer)**: Turns messy MLS and county exports into one clean table, with duplicates merged and price history kept. ([live demo](https://chasebuilds.github.io/listing-data-normalizer/))
+
+[All projects, sorted by industry](https://github.com/chasebuilds) · [chasebuilds.github.io](https://chasebuilds.github.io)
